@@ -1,0 +1,427 @@
+---
+title: "Lab 02 - Linear Regression"
+author: "Ken Ye"
+date: "09/06/2023"
+output: pdf_document
+---
+
+## Instructions
+
+-   Please work through all sections at the beginning of the lab before moving onto the problems at the end
+-   Feel free to work in groups
+-   Work in your groups for about 1 hour, then we will present our results at the end of lab
+-   Submit the Rmd and pdf files under the assignment section of Sakai
+
+## 1. Libraries
+
+The `library()` function is used to access functionality that is provided by R packages, but is not included in base R. `install.packages()` can be used to install new packages. Run this command from the console.
+
+```{r}
+# install.packages("ISLR")
+```
+
+First, load the packages `MASS` and `ISLR` that will be used throughout the lab.
+
+```{r}
+library(MASS)
+library(ISLR)
+```
+
+## 2. Simple Linear Regression
+
+This lab will be using the `Boston` data from the `MASS` package. Load this data using the `attach()` function:
+
+```{r}
+attach(Boston)
+```
+
+The functions `head()` and `names()` can be used to explore the data.
+
+```{r}
+head(Boston)
+names(Boston)
+```
+
+The `MASS` library contains the Boston data set, which records medv (median house value) for 506 neighborhoods around Boston. We will seek to predict medv using 13 predictors such as rm (average number of rooms per house), age (average age of houses), and lstat (percent of households with low socioeconomic status). To find out more about the data set, we can type `?Boston`.
+
+```{r}
+?Boston
+```
+
+We'll start with a fitting a simple linear model using the `lm()` function. Instead of attaching the `Boston` dataset, we also can specify the data from the `lm()` function. In the `lm()` function, the first variable is the response variable and the variables to the right of the `~` symbol are the predictor variable(s).
+
+```{r}
+lm.fit <- lm(medv ~ lstat)
+lm.fit <- lm(medv ~ lstat, data = Boston)
+```
+
+There are several ways that we can examine the model results. First, we can just call the name of the `lm()` model for a brief summary.
+
+```{r}
+lm.fit
+```
+
+We can also use the `names()` function to list all of the names of variables in the `lm.fit` model:
+
+```{r}
+names(lm.fit)
+```
+
+The `summary()` function gives a more extensive overview of the model fit:
+
+```{r}
+summary(lm.fit)
+```
+
+The coefficients of the linear regression model can be extracted using the `coef()` function and the confidence interval(s) with the `confint()` function.
+
+```{r}
+coef(lm.fit)
+confint(lm.fit)
+```
+
+We can use the `predict()` function to obtain prediction intervals or confidence intervals for a given value of the predictor variable, `lstat`. Note that when using the predict function, the column names and format of the new points at which to predict needs to be the same as the original data frame used to fit the `lm()` model. If you encounter errors using the `predict()` function, this is a good first thing to check.
+
+```{r}
+predict(lm.fit, data.frame(lstat = (c(5, 10, 15))), interval = "confidence")
+predict(lm.fit, data.frame(lstat = (c(5, 10, 15))), interval = "prediction")
+```
+
+We can plot the variables `lstat` and `medv` using the `plot()` function and overlay the regression line found using `lm()` with the `abline()` function.
+
+```{r}
+plot(lstat, medv)
+abline(lm.fit)
+```
+
+We can experiment with different options for `abline()` by changing the line width and color in `abline()`.
+
+```{r}
+plot(lstat, medv)
+abline(lm.fit, lwd = 3)
+```
+
+```{r}
+plot(lstat, medv)
+abline(lm.fit, lwd = 3, col = "red")
+```
+
+```{r}
+plot(lstat, medv, col = "red")
+```
+
+The `pch` argument in `plot()` changes the shape/type of the points that are plotted.
+
+```{r}
+plot(lstat, medv, pch = 20)
+```
+
+```{r}
+plot(lstat, medv, pch = "+")
+```
+
+```{r}
+plot(1:20, 1:20, pch = 1:20)
+```
+
+Optional: We can make a similar plot using `ggplot`, where we fit the linear regression model using `ggplot()`.
+
+```{r}
+library(ggplot2)
+ggplot(Boston, aes(y = medv, x = lstat)) + 
+    geom_smooth(method = "lm", formula = y ~ x, colour = "blue") + 
+    geom_point() +
+  ggtitle("medv vs. lstat for the Boston data")
+
+```
+
+The `par()` function can be used to create a grid of multiple subplots.
+
+```{r}
+par(mfrow = c(2, 2))
+plot(lm.fit)
+```
+
+We can use the `residuals()` and `rstudent()` functions to extract the residuals and studentized residuals, respectively, from the linear model and plot them along with the predicted values.
+
+```{r}
+plot(predict(lm.fit), residuals(lm.fit))
+plot(predict(lm.fit), rstudent(lm.fit))
+```
+
+Additionally, we can compute the influence matrix for the predictors using the `hatvalues()` function.
+
+```{r}
+plot(hatvalues(lm.fit))
+which.max(hatvalues(lm.fit))
+```
+
+## 3. Multiple Linear Regression
+
+The `lm()` function can also fit multiple regression models. In this section, we will use `age` and `lstata` as predictors of the response variable `medv`.
+
+```{r}
+lm.fit <- lm(medv ~ lstat + age, data = Boston)
+summary(lm.fit)
+```
+
+In the `lm()` formula, a dot `.` can be used to include all variables in the Boston data as predictors.
+
+```{r}
+lm.fit <- lm(medv ~ ., data = Boston)
+summary(lm.fit)
+```
+
+The Variance Inflation Factors (VIF) can be calculated using the `vif()` function from the `car` package (Companion to Applied Regression). The `car` package is included in the `ISLR` package and should already be loaded.
+
+```{r}
+library(car)
+vif(lm.fit)
+```
+
+If we want to exclude specific variables from the list of predictors, we can use the `-` notation. In the following example, all predictor variables but `age` are included in the model.
+
+```{r}
+lm.fit1 <- lm(medv ~ . - age, data = Boston)
+summary(lm.fit1)
+```
+
+Including `-1` excludes the intercept from the model.
+
+```{r}
+lm.fit1 <- lm(medv ~ . - 1, data = Boston)
+summary(lm.fit1)
+```
+
+The `update()` function can be used to specify a new formula for an existing model.
+
+```{r}
+lm.fit1 <- update(lm.fit, ~. - age)
+```
+
+## 4. Interaction Terms
+
+There are two ways to include interaction terms in the model, `:` and `*`. The `:` symbol only includes the interaction term between the two variables, while the `*` symbol includes the variables themselves, as well as the interaction terms. This means that `lstat*age` is equivalent to `lstat + age + lstat:age`.
+
+```{r}
+summary(lm(medv ~ lstat * age, data = Boston))
+```
+
+A simple way to include all interaction terms is the syntax `.^2`.
+
+```{r}
+summary(lm(medv ~.^2, data = Boston))
+```
+
+## 5. Non-Linear Transformations of the Predictors
+
+Non-linear transformations of variables can be included in the `lm()` function, too. Powers of terms must be included inside the `I()` function to be treated `as is`.
+
+```{r}
+lm.fit2 <- lm(medv ~ lstat + I(lstat^2))
+summary(lm.fit2)
+```
+
+We can also examine the analysis of variance (ANOVA) for one or more models with the `anova()` function.
+
+```{r}
+lm.fit <- lm(medv ~ lstat)
+anova(lm.fit, lm.fit2)
+```
+
+```{r}
+par(mfrow = c(2, 2))
+plot(lm.fit2)
+```
+
+The `poly()` function can be used to include all polynomial terms up to the specified degree.
+
+```{r}
+lm.fit5 <- lm(medv ~ poly(lstat, 5))
+summary(lm.fit5)
+```
+
+`lm()` can handle other transformations, in addition to polynomial transformations.
+
+```{r}
+summary(lm(medv ~ log(rm), data = Boston))
+```
+
+## 6. Qualitative Predictors
+
+For this section, we will use the `Carseats` dataset from the `ISLR` package. We can use the `attach()` function again to load this dataset.
+
+```{r}
+attach(Carseats, warn.conflicts = FALSE)
+head(Carseats)
+names(Carseats)
+```
+
+When we have qualitative/categorical variables, R automatically generates dummy variables.
+
+```{r}
+lm.fit <- lm(Sales ~ . + Income:Advertising + Price:Age, data = Carseats)
+summary(lm.fit)
+```
+
+To examine the coding for the qualitative variables, the `constasts()` function can be used.
+
+```{r}
+contrasts(ShelveLoc)
+```
+
+## 7. Writing Functions
+
+We can write our own functions to expand the functionality of R.
+
+```{r}
+LoadLibraries <- function() {
+    library(ISLR)
+    library(MASS)
+}
+```
+
+```{r}
+LoadLibraries()
+```
+
+## Exercises:
+
+1.  For this exercise, we will work with the `Cars93` data from the `MASS` package, which contains information about 93 cars on sale in the US in 1993.
+
+<!-- -->
+
+(a) Load the data and evaluate the columns. Choose 3 of the columns and describe each of those variables.
+
+    ```{r}
+    library(MASS)
+    data("Cars93")
+    names(Cars93)
+    ```
+
+    ```{r}
+    # Price
+    summary(Cars93$Price)
+    ```
+
+    Price: Midrange Price (in \$1,000): average of `Min.Price` and `Max.Price`.
+
+    ```{r}
+    # Horsepower
+    summary(Cars93$Horsepower)
+    ```
+
+    Horsepower: Horsepower (maximum).
+
+    ```{r}
+    # Cylinders
+    summary(Cars93$Cylinders)
+    ```
+
+    Cylinders: Number of cylinders (missing for Mazda RX-7, which has a rotary engine).
+
+(b) using data subsetting techniques from last week's lab, remove the columns `Manufacturer`, `Model` and `Make`. Additionally, remove any rows with `NA` values.
+
+    ```{r}
+    Cars93$Manufacturer <- NULL
+    Cars93$Model <- NULL
+    Cars93$Make <- NULL
+    Cars93 <- na.omit(Cars93)
+    ```
+
+(c) Suppose that we wish to predict the `Weight` of each car, given the other variables as predictor variables. Visually examine the relationship between `Weight` and the other predictors. What predictors show a strong positive association with `Weight`? Which variables show a strong negative association? Which variables have a non-linear relationship with `Weight`?
+
+    ```{r}
+    for(i in 1:22) {
+      plot(Cars93[[i]], Cars93$Weight, xlab=names(Cars93)[i], ylab="Weight")
+    }
+    for(i in 24:24) {
+      plot(Cars93[[i]], Cars93$Weight, xlab=names(Cars93)[i], ylab="Weight")
+    }
+    ```
+
+    What predictors show a strong positive association with `Weight`?
+
+    Min.Price, Price, Max.Price, EngineSize, Horsepower, Fuel.tank.capacity, length, Wheelbase, Width, Turn.circle
+
+    Which variables show a strong negative association?
+
+    MPG.city, MPG.highway, Rev.per.mile
+
+    Which variables have a non-linear relationship with `Weight`?
+
+    Min.Price, Price, Max.Price
+
+(d) Suppose you want to perform a simple linear regression on `Weight`. You want to select the 1 predictor variable that best predicts `Weight`. Which predictor variable do you select? Why did you select this variable?
+
+    I would select EngineSize because it has one of the strongest positive linear relationship with weight.
+
+(e) For the variable selected in part (d), perform a simple linear regression. Report the estimated value of $\hat{\beta}_1$, the standard error and the $R^2$ value of your model.
+
+    ```{r}
+    lm.fit <- lm(Weight ~ EngineSize, data = Cars93)
+    summary(lm.fit)
+    ```
+
+    $\hat{\beta}_1$ is 516.71, SE is 25.17, and $R^2$ is 0.8404.
+
+(f) Perform model diagnostics on the fit from part (e). Include appropriate plots. What can you conclude about the model fit?
+
+    ```{r}
+    par(mfrow=c(2,2))
+    plot(lm.fit)
+    ```
+
+    The model fit is ok but not perfect, as indicated by the curved pattern of residuals etc.
+
+<!-- -->
+
+2.  Multiple Linear Regression: Now we want to include multiple predictors in our model for `Weight`. The goal is to predict `Weight` well with the fewest number of predictors possible. Explore possible multiple linear regression models, including transformations of predictor variables and interaction terms. Choose 3 of the coefficients in your model and write an interpretation for them. Perform some model diagnostics and comment on the quality of your model fit. Do the fitted coefficients make sense for this dataset?
+
+    ```{r}
+    lm.fit2 <- lm(Weight ~ (EngineSize + Horsepower + Fuel.tank.capacity)^2, data = Cars93)
+    summary(lm.fit2)
+    ```
+
+    Holding other variables constant, a one-unit increase in the engine size is associated with an increase of approximately 741.0168 units in the weight of the car.
+
+    Holding other variables constant, a one-unit increase in the horsepower is associated with an increase of approximately 4.6507 units in the weight of the car.
+
+    Holding other variables constant, a one-unit increase in the fuel tank capacity is associated with an increase of approximately 52.9357 units in the weight of the car.
+
+    ```{r}
+    par(mfrow=c(2,2))
+    plot(lm.fit2)
+    ```
+
+    Accordingt to the model diagnostics, the model seems to be a great fit. And the fitted coefficients indeed make sense for this dataset --- for example, for a car with larger engine size, we do expect its weight to be heavier.
+
+3.  Write a function that accepts two arguments, `x` and `y` and returns the following calculations: `x+y`, `x*y` and `x/y`. Make sure to check if the division can be performed, and return an error message if not. The function should return a named list. Test your function on some sample values and print the results.
+
+    ```{r}
+    calc <- function(x,y) {
+        if(y == 0) {
+        division_result <- "Error: Division by zero is not allowed"
+      } else {
+        division_result <- x / y
+      }
+      
+      results <- list(
+        sum = x + y,
+        product = x * y,
+        division = division_result
+      )
+      
+      return(results)
+    }
+    ```
+
+    ```{r}
+    # Testing the function with sample values
+    test1 <- calc(4, 2)
+    test2 <- calc(5, 0)
+
+    # Printing the results
+    print(test1)
+    print(test2)
+    ```

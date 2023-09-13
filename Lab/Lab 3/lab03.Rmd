@@ -1,0 +1,376 @@
+---
+title: "Lab 03 - Classification"
+author: "Ken Ye"
+date: "9/13/2023"
+output:
+  html_document:
+    df_print: paged
+---
+
+## 1. Stock Market Data
+
+This lab will work with the `Smarket` stock market data from the `ISLR` library.
+The data consists of the percentage returns for the S&P 500 stock index for each
+day between the beginning of 2001 to the end of 2005. Each date has information
+about the percentage returns for the 5 previous trading days (`Lag1` through
+`Lag5`), the `Volume` (number of shares traded on the previous day), `Today`
+(percentage return on given date) and `Direction` (if the market was up or down
+on this date.)
+
+We'll start by loading and examining the data.
+
+```{r}
+library(ISLR)
+attach(Smarket)
+names(Smarket)
+pairs(Smarket)
+
+```
+
+The `cor()` function can be used to calculate the matrix of all pairwise
+correlations between predictors.
+
+```{r}
+cor(Smarket[, -9])
+```
+
+We can also look at the `Volume` variable over the time period considered.
+
+```{r}
+plot(Volume)
+```
+
+## 2. Logistic Regression
+
+The variable of interest is predicting the `Direction`, whether a stock moved
+`Up` or `Down`. We will fit a logistic regression model to predict `Direction`
+using the other variables (except `Today`).
+
+The `glm()` function can be used to fit generalized linear models, of which
+logistic regression is an example. The functionality of `glm()` is similar to
+that of the `lm()` function from last week. We will need to pass the argument
+`family = binomial` to the `glm()` function to specify logistic regression.
+
+```{r}
+glm.fit <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, 
+               data = Smarket, family = binomial)
+summary(glm.fit)
+```
+
+The `summary()` and `coef()` functions can also be used with `glm()` model fits.
+
+```{r}
+coef(glm.fit)
+summary(glm.fit)$coef
+summary(glm.fit)$coef[, 4]
+```
+
+The `predict()` function can also be used, similar to its use with the `lm()`
+function.
+
+```{r}
+glm.probs <- predict(glm.fit, type = "response")
+glm.probs[1:10]
+```
+
+The `contrasts()` function can be used to see the dummy variable encoding for
+the `Direction` variable.
+
+```{r}
+contrasts(Direction)
+```
+
+This means that when `Up = 0`, `Direction = Down`, while when `Up=1`, we have
+that `Direction = Up`.
+
+Next, we will want to convert the predicted probabilities to either `Up` or
+`Down` based on the value of the probability. Probabilities greater than 0.5
+will be classified as `Up`.
+
+```{r}
+glm.pred <- rep("Down", 1250)
+glm.pred[glm.probs > 0.5] <- "Up"
+```
+
+We can create a confusion matrix using the `table()` function. The confusion
+matrix gives us the number of True Positives, True Negatives, False Positives
+and False Negatives.
+
+```{r}
+table(glm.pred, Direction)
+```
+
+We can calculate the accuracy of the classifier by finding the percentage of
+points that are correctly classified.
+
+```{r}
+mean(glm.pred == Direction)
+```
+
+Now, we will divide our dataset into training and validation sets. Observations
+from 2001-2004 will be in the training set and observations from 2005 will be in
+the validation set.
+
+```{r}
+train <- (Year < 2005)
+Smarket.2005= Smarket [! train ,]
+dim(Smarket.2005)
+Direction.2005=Direction[!train]
+```
+
+We can again fit the logistic regression model using `glm()`, this time
+restricted to just our training set. We can then predict the `Direction` on the
+validation set using the `predict()` function.
+
+```{r}
+glm.fit <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, 
+               data = Smarket, family = binomial, subset = train)
+glm.probs <- predict(glm.fit, Smarket.2005, type = "response")
+```
+
+Then, we can compare the predictions on the validation set to the true labels
+and calculate the accuracy of our logistic regression classifier.
+
+```{r}
+glm.pred <- rep("Down", 252)
+glm.pred[glm.probs > 0.5] <- "Up"
+table(glm.pred, Direction.2005)
+mean(glm.pred == Direction.2005) ## Accuracy
+mean(glm.pred != Direction.2005) ## Misclassification rate
+```
+
+We can improve the predictive performance of our classifier by considering a
+subset of the predictor variables; only those that have the strongest
+relationship to the response. From the correlation matrix calculated above, we
+can see that these variables are `Lag1` and `Lag2`.
+
+```{r}
+glm.fit <- glm(Direction ~ Lag1 + Lag2, data = Smarket, family = binomial, subset = train)
+glm.probs <- predict(glm.fit, Smarket.2005, type = "response")
+glm.pred <- rep("Down", 252)
+glm.pred[glm.probs > 0.5] <- "Up"
+table(glm.pred, Direction.2005)
+```
+
+The predictive performance has slightly improved by limiting the predictor
+variables to a subset.
+
+```{r}
+mean(glm.pred == Direction.2005)
+
+```
+
+We can also predict the `Direction` for two new days with the lags given below
+using the `predict()` function.
+
+```{r}
+predict(glm.fit,newdata=data.frame(Lag1=c(1.2,1.5),
+                                   Lag2=c(1.1,-0.8)),type="response")
+```
+
+## 3. K-Nearest Neighbors
+
+To fit a K-nearest neighbors model, we need to use the `class()` package. First,
+however, we need to split our data into training and validation sets. We can use
+`cbind()` (column bind) to bind `Lag1` and `Lag2` into a matrix for each subset.
+
+```{r}
+library(class)
+train.X <- cbind(Lag1, Lag2)[train, ]
+test.X <- cbind(Lag1, Lag2)[!train, ]
+train.Direction <- Direction[train]
+```
+
+We need to use `set.seed()` to initialize the random number generator for
+consistent results and then can call the `knn()` function to fit the classifier
+and make predictions about `Direction`.
+
+```{r}
+set.seed(1)
+knn.pred <- knn(train.X, test.X, train.Direction, k = 1)
+table(knn.pred, Direction.2005)
+```
+
+The accuracy of the classifier on the test set can be found using the diagonal
+of the confusion matrix.
+
+```{r}
+accuracy <- sum(diag(table(knn.pred, Direction.2005)))/nrow(Smarket)
+```
+
+We can also repeat the fit with $K=3$ and compute the confusion matrix and
+accuracy.
+
+```{r}
+knn.pred <- knn(train.X, test.X, train.Direction, k = 3)
+table(knn.pred, Direction.2005)
+mean(knn.pred == Direction.2005)
+```
+
+## 4. Application
+
+We can also apply the KNN classifier to the `Caravan` dataset. The response
+variable is `Purchase`, which indicates whether or not an individual purchases a
+caravan insurance policy. This dataset is an imbalanced classification problem,
+as only 6% of people in the dataset purchase the caravan insurance.
+
+```{r}
+attach(Caravan)
+dim(Caravan)
+summary(Purchase)
+348/5822
+```
+
+We can use the `scale()` function to scale the data to have a mean of 0 and a
+standard deviation of 1.
+
+```{r}
+standardized.X <- scale(Caravan[, -86])
+var(Caravan[, 1])
+var(Caravan[, 2])
+var(standardized.X[,1])
+var(standardized.X[,2])
+```
+
+Again, we can split the data into a training and test set and make predictions
+about the response variable `Purchase` using a KNN model.
+
+```{r}
+test <- 1:1000
+train.X <- standardized.X[-test, ]
+test.X <- standardized.X[test, ]
+train.Y <- Purchase[-test]
+test.Y <- Purchase[test]
+set.seed(1)
+knn.pred <- knn(train.X, test.X, train.Y, k = 1)
+mean(test.Y != knn.pred)
+
+mean(test.Y != "No")
+
+table(knn.pred, test.Y)
+
+9/(68 + 9)
+
+
+```
+
+We can also fit the model with other values of $K$, for example $K=3$ and $K=5$.
+
+```{r}
+knn.pred <- knn(train.X, test.X, train.Y, k = 3)
+table(knn.pred, test.Y)
+5/26
+knn.pred <- knn(train.X, test.X, train.Y, k = 5)
+table(knn.pred, test.Y)
+
+4/15
+```
+
+Finally, we can compare the KNN model with a logistic regression model fit using
+`glm()`.
+
+```{r}
+glm.fit <- glm(Purchase ~ ., data = Caravan, family = binomial, subset = -test)
+glm.probs <- predict(glm.fit, Caravan[test, ], type = "response")
+glm.pred <- rep("No", 1000)
+glm.pred[glm.probs > 0.5] <- "Yes"
+table(glm.pred, test.Y)
+
+glm.pred <- rep("No", 1000)
+glm.pred[glm.probs > 0.25] <- " Yes"
+table(glm.pred, test.Y)
+
+11/(22 + 11)
+
+```
+
+## 5. Exercises
+
+### 1. Logistic Regression
+
+We will again use the `iris` data for classification.
+
+```{r}
+data("iris")
+colnames(iris)
+attach(iris)
+```
+
+(a) Find the number of unique `Species` for the `iris` data.
+
+```{r}
+
+```
+
+(b) Since there are more than 2 classes for the `iris` data, we will consider a
+    1-vs-rest approach to classification. Add a new column to the `iris` dataset
+    that has the labels that we wil use for classificaition. Call this column
+    `Species2`. Encode this column such that the `setosa` is the positive class
+    (`Speicies2 = 1`), while the other Species correspond to the negative class
+    (the outcome variable is 0 for these other classes).
+
+```{r}
+
+```
+
+(c) Next, we need to divide our data into a training and validation set. Examine
+    the `iris` data and propose a method for this division. What do we need to
+    be careful about based on the original `iris` data?
+
+```{r}
+## Need to shuffle data, all classes in order right now
+
+```
+
+(d) What are some cases where we need to be careful how we split our data into
+    training and validation sets? What is the usual assumption when we split the
+    data randomly?
+
+(e) Now, split the `iris` data into a training and validation set. Use 30% of
+    the data for the validation set. Make sure to use `set.seed()` (see Lab 01
+    for a reminder about this function). Print the dimensions of you training
+    and validation sets.
+
+```{r}
+
+```
+
+(f) Fit a logistic regression classifier to your `iris` training data. Display a
+    summary of the model fit. Use `Sepal.Length`, `Sepal.Width`, `Petal.Length`
+    and `Petal.Width` as predictors.
+
+```{r}
+
+```
+
+(g) Explore adding some interaction terms or dropping terms from the model that
+    do not appear significant. You do not need to perform forward/backward
+    selection, just explore the data and model fits. Interpret the parameters in
+    your final model.
+
+```{r}
+
+```
+
+(h) Use the `predict()` function to predict the species for your validation
+    data. Use `predict()` for both models, from part (f) and part (g).
+
+```{r}
+
+```
+
+(i) Calculate the confusion matrix and accuracy for your two models, from parts
+    (f) and (g). Make sure to first convert your predicted probabilities from
+    part (h) to `Species2`. Assume that a probability of greater than 0.5
+    corresponds to the positive class species, i.e. `Species2=1` and
+    `Species = setosa`. Which model would you select and why?
+
+```{r}
+
+```
+
+### 2. Conceptual
+
+Think about the `Caravan` example above. Is accuracy a good measure to evaluate
+potential classifiers on this data set? Why or why not? What might be some
+better metrics to use to evaluate classifiers for imbalanced data sets?

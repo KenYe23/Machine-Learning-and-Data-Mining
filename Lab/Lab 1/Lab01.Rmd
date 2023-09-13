@@ -1,0 +1,396 @@
+---
+title: "Lab 01 - Introduction to R"
+author: "Ken Ye"
+date: "08/30/2023"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+## 1. Announcements
+
+-   Labs: mixture of labs from textbook and review problems from current chapter
+-   Also can be review of concepts from current week of lectures
+-   Labs will be due via Sakai on Wed at midnight following the lab
+-   Graded for completeness, most of the labs should be able to be finished in class
+-   Don't worry about formatting of code/answers, focus on content
+-   Submit code and solutions
+-   Absences: let me and Prof. Mak know ahead of time, complete lab on your own and turn in by due date
+-   Let me know ahead of lab via email or Piazza comment if there are specific topics from the lectures that you would like to further review
+
+## 2. Intro to R
+
+-   R will the language of choice for STA 325
+-   Download at <http://cran.r-project.org/>
+-   RStudio also recommended (<https://www.rstudio.com/products/rstudio/download/>)
+-   RMarkdown recommended for labs/hws, template will be provided for labs, but not required (<https://rmarkdown.rstudio.com/>)
+-   Work through the following examples and then answer the problems at the end of the section
+
+### 2.1 Basic Commands
+
+R uses functions to perform commands. For example, the function `c()` performs concatenation and can be used to create vectors.
+
+```{r}
+x <- c(1,3,2,5)
+x
+```
+
+We can use the function `length()` to find the length of vectors.
+
+```{r}
+length(x)
+```
+
+```{r}
+x <- c(1,6,2,8, 9, 10)
+y <- c(1,4,3)
+x+y
+```
+
+`ls()` lists all the variables (data and functions) currently defined. `rm()` can be used to remove variables. Use `rm(list=ls())` to remove all variables at once.
+
+```{r}
+ls()
+rm(x, y)
+ls()
+```
+
+While the function `c()` can be used to create vectors, the function `matrix()` can be used to create matrices of numbers. Use the `?` before a function to learn more about it and open the help file.
+
+```{r}
+?matrix
+x <- matrix(c(1,2,3,4), nrow = 2, ncol = 2, byrow = TRUE)
+x
+```
+
+R fills matrices by column by default. Use the argument `byrow = TRUE` to fill by row.
+
+```{r}
+matrix(c(1,2,3,4), nrow = 2, ncol = 2, byrow = TRUE)
+```
+
+Powers of numbers, vectors and matrices can be performed using `sqrt()` and `^2`.
+
+```{r}
+sqrt(x)
+x^2
+```
+
+Random variables: `rnorm()` generates random normally distributed variables. The first argument specifies how many random variables to generate, while the mean and standard deviation can also be specified. The defaults are a standard normal, with mean 0 and standard deviation 1. Note: `rnorm` takes the **STANDARD DEVIATION** not the variance as an argument. We can generate two sequences of random normal variables and calculate the correlation between them.
+
+```{r}
+x <- rnorm(50) ## generate 50 standard normal random variables
+y <- x + rnorm(50, mean = 50, sd = 0.1)
+cor(x, y)
+```
+
+It is important to have reproducibility of your code, even when sampling random variables. Compare your values of `x` above with those of your neighbor. `set.seed()` allows for reproducible code by always using the same set of random numbers. It is important to always set the seed at the beginning of the code so your results can be replicated. Any arbitrary integer works for the seed.
+
+```{r}
+set.seed(8675309)
+
+runif(10, 0, 1)
+runif(1, 0, 1)
+```
+
+`mean()`, `var()` and `sd()` can be used to calculate the mean, variance and standard deviation, respectively.
+
+```{r}
+mean(x)
+var(x)
+```
+
+### 2.2 Graphics and Plots
+
+`plot()` is the main function to use for plotting in R. There are many options for plots, use `?plot()` to explore these options. An example plot is given below
+
+```{r}
+x <- rnorm(100)
+y <- rnorm(100)
+plot(x, y, xlab = "x-axis", ylab = 'y-axis', main = "Plot of y vs. x")
+```
+
+Plots can also be saved using the `pdf()` or `jpeg()` functions. `dev.off()` tells R that we are done creating the plot.
+
+```{r}
+pdf("Figure.pdf")
+plot(x,y,col="green")
+dev.off()
+```
+
+It can be helpful to create sequences of numbers, especially for plotting. `seq()` is the function to do this and allows specific step sizes.
+
+```{r}
+x <- seq(1,10)
+x
+x <- 1:10
+x
+x <- seq(-pi, pi, length.out = 50)
+x
+```
+
+The `contour()` function can be used to create contour plots for 3 dimensional data. The three arguments in order are:
+
+1.  A vector of the x values
+2.  A vector of the y values
+3.  A matrix corresponding to the z value for each (x,y) pair
+
+```{r}
+y <- x
+f=outer(x,y,function(x,y)cos(y)/(1+x^2))
+contour(x,y,f)
+contour(x,y,f,nlevels=45,add=T)
+fa <- (f-t(f))/2
+contour(x,y,fa,nlevels=15)
+```
+
+`image()` works similarly, but creates a heatmap and `persp()` can alternatively be used, where `theta` and `phi` control the angle at which the plot is viewed.
+
+```{r}
+image(x,y,fa)
+persp(x,y,fa)
+persp(x,y,fa,theta=30)
+persp(x,y,fa,theta=30,phi=20)
+persp(x,y,fa,theta=30,phi=70)
+persp(x,y,fa,theta=30,phi=40)
+```
+
+### Bonus: ggplot
+
+The package `ggplot` provides an alternative method of plotting based on the grammar of graphics. `ggplot` allows for more sophisticated plots, but is not as easy to use as the base `plot()` function. Data must be in the form of a dataframe to use `ggplot`.
+
+```{r}
+# install.packages("ggplot2") ## run this line if you need to install ggplot
+library(ggplot2)
+data <- data.frame(x, y)
+ggplot(data, aes(x = x, y = y)) +
+  geom_point() +
+  ggtitle("Y vs. X")
+```
+
+### 2.3 Indexing Data
+
+Often, we want to work with a subset of data at a time. For example, suppose we have a matrix A:
+
+```{r}
+A <- matrix(1:16, nrow = 4, ncol = 4)
+A
+```
+
+If we want to select the element in the second row and the third column, we can use the command:
+
+```{r}
+A[2,3]
+```
+
+We can also select multiple rows and columns at a time as follows:
+
+```{r}
+A[c(1,3), c(2,4)]
+A[1:3, 2:4]
+```
+
+If we want to select all elements in a row or column, we can leave that element blank:
+
+```{r}
+A[1:2, ] ## select all columns for the first 2 rows
+A[, 1:2] ## select all rows for the first 2 columns
+```
+
+Using a negative index indicates that R should drop those specified elements:
+
+```{r}
+A[-c(1,3),]
+```
+
+The `dim()` function gives the dimensions of a matrix. `nrow()` and `ncol()` can also be used to find the number of rows and number of columns, respectively, of a matrix.
+
+```{r}
+dim(A)
+nrow(A)
+ncol(A)
+```
+
+## 2.4 Loading Data
+
+Most data analysis requires the loading of data from an external source. `read.table()` is the main function to load data, and `write.table()` can be used to export data. First, we must make sure that we are in the correct directory to load the data. `getwd()` tells us what our current working directory is. `setwd()` allows us to change the working directory to the correct file path so that we can load the data of interest.
+
+We can read in some sample auto data with `read.table()`:
+
+```{r, eval = FALSE}
+Auto <- read.table("https://www.statlearning.com/s/Auto.data", 
+                   header = TRUE)
+head(Auto)
+```
+
+`head()` allows us to look at the first few rows of the data, while `tail()` allows us to view the last rows of the data. These functions are useful, especially with large datasets and checking formatting or variable names.
+
+The functions `read.table()` and `read.csv()` have several options for reading in and formatting data. There are also other functions in different libraries that are faster for reading in large datasets.
+
+```{r}
+Auto <- read.csv("https://www.statlearning.com/s/Auto.csv", 
+                 header = TRUE, na.strings = "?")
+head(Auto)
+```
+
+We can practice indexing this data. `names()` will give the list of variables that have been imported. `colnames()` also works here.
+
+```{r}
+dim(Auto)
+Auto[1:4, ]
+names(Auto)
+colnames(Auto)
+```
+
+### 2.5 Additional Graphical and Numerical Summaries
+
+Columns can be accessed by name in two different ways. The first uses the `$` operator.
+
+```{r}
+plot(Auto$cylinders, Auto$mpg)
+```
+
+We can also use the `Attach()` function, which specifies to R to look for the specific variable names in the `Auto` data.
+
+```{r}
+attach(Auto)
+plot(cylinders, mpg)
+```
+
+`as.factor()` can be used to convert quantitative variables to categorical variables. Categorical variables are plotted as boxplots in R by default.
+
+```{r}
+cylinders <- as.factor(cylinders)
+plot(cylinders, mpg)
+```
+
+There are several different plotting options available for categorical variables, too.
+
+```{r}
+plot(cylinders, mpg)
+plot(cylinders, mpg, col="red")
+plot(cylinders, mpg, col="red", varwidth=T)
+plot(cylinders, mpg, col="red", varwidth=T,horizontal=T)
+plot(cylinders, mpg, col="red", varwidth=T, xlab="cylinders", ylab="MPG")
+```
+
+The `hist()` function can be used to create histograms. The `breaks` argument controls how wide the bins of the histogram are.
+
+```{r}
+hist(mpg)
+hist(mpg,col=2)
+hist(mpg,col=2, breaks=15)
+```
+
+The `pairs()` function creates a scatterplot for every pair of variables. `pairs()` can also be used on a subset of variables.
+
+```{r}
+# Check the data types of variables
+var_types <- sapply(Auto, class)
+
+# Filter out non-numeric variables
+numeric_vars <- names(var_types[var_types %in% c("numeric", "integer")])
+
+# Create a scatterplot matrix
+pairs(Auto[numeric_vars])
+
+#pairs(Auto)
+pairs(~ mpg + displacement + horsepower + weight + acceleration,  Auto)
+```
+
+The `identify()` function allows you to specify points in an interactive fashion. The numbers under `identify()` specify the rows of the selected points.
+
+```{r}
+plot(horsepower,mpg)
+identify(horsepower,mpg,name)
+```
+
+The `summary()` function can be used to provide a numerical summary of all variables in a dataset. `summary()` can also be used for a single variable.
+
+```{r}
+summary(Auto)
+Auto$cylinders <- as.factor(Auto$cylinders)
+summary(mpg)
+```
+
+### Problems
+
+1.  Generate 1000 samples from a normal distribution with mean 10 and variance 10. Calculate the mean, variance and standard deviation of these samples.
+
+```{r}
+samples <- rnorm(1000, mean = 10, sd = 10)
+```
+
+2.  Plot your samples from (1) treating the generated values as the y-variable and create a sequence of integers from 1 to 1000 for the x values. Make this a line-plot and change the color (see <http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf> for lots of choices). Add a title to your plot.
+
+```{r}
+x <- 1:1000
+y <- samples
+plot(x,y, col = "lightskyblue", main = "Normal Distribution Samples")
+```
+
+3.  Create a 5x5 matrix with the numbers 1 to 25 and fill by row. Then, select the following elements from the matrix:
+
+-   The element in the 3rd row and 4th column
+-   The second row
+-   All elements except for all elements in the first row and all elements in the fourth column
+
+```{r}
+A <- matrix(1:25, nrow = 5, ncol = 5)
+A
+A[3,4]
+A[2,]
+A[-1,-4]
+```
+
+4.  There are also several built-in datasets in R. The Iris dataset is used a lot in machine learning for classification as a toy data set. We can use the function `data("iris")` to load this data set into R.
+
+<!-- -->
+
+a.  Load the iris data into R and print the column names.
+
+```{r}
+data("iris")
+names(iris)
+```
+
+b.  Provide a summary of the columns of the iris data.
+
+```{r}
+summary(iris)
+```
+
+c.  Provide a visual summary of the data, either with histograms or boxplots.
+
+    ```{r}
+    var_types <- sapply(iris, class)
+    var_types
+    ```
+
+```{r, warning=FALSE}
+attach(iris)
+hist(Sepal.Length)
+hist(Sepal.Width)
+hist(Petal.Length)
+hist(Petal.Width)
+```
+
+d.  Plot all variables pair-wise. Are there any trends that you notice?
+
+```{r}
+pairs(~Sepal.Length + Sepal.Width + Petal.Length + Petal.Width,  iris)
+```
+
+There are positive relationships b/w all four numeric variables.
+
+e.  Select two variables of interest. Plot these variables in a scatter plot and color by the species of iris.
+
+```{r}
+plot(iris$Sepal.Length, iris$Sepal.Width, 
+     col = iris$Species)
+```
+
+f.  Based on your analyis above, how easy do you think it will be to classify species of iris based on these 4 features with high accuracy? Do you think a linear classifier will work well for this data set? Why or why not?
+
+    It would make sense to try the linear classifier because there seems to be positive relationships b/w all four numeric variables.
