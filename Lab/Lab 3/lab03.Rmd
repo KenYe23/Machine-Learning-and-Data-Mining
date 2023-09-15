@@ -24,7 +24,6 @@ library(ISLR)
 attach(Smarket)
 names(Smarket)
 pairs(Smarket)
-
 ```
 
 The `cor()` function can be used to calculate the matrix of all pairwise
@@ -187,7 +186,7 @@ and make predictions about `Direction`.
 
 ```{r}
 set.seed(1)
-knn.pred <- knn(train.X, test.X, train.Direction, k = 1)
+knn.pred <- knn(train.X, test.X, train.Direction, k = 3)
 table(knn.pred, Direction.2005)
 ```
 
@@ -298,8 +297,10 @@ attach(iris)
 
 (a) Find the number of unique `Species` for the `iris` data.
 
-```{r}
+    There are 3 unique species.
 
+```{r}
+unique(Species)
 ```
 
 (b) Since there are more than 2 classes for the `iris` data, we will consider a
@@ -310,21 +311,40 @@ attach(iris)
     (the outcome variable is 0 for these other classes).
 
 ```{r}
-
+iris$Species2 <- ifelse(Species == "setosa", 1, 0)
 ```
 
 (c) Next, we need to divide our data into a training and validation set. Examine
     the `iris` data and propose a method for this division. What do we need to
     be careful about based on the original `iris` data?
 
+    We need to make sure the training and the testing set has similar
+    distribution of the species.
+
 ```{r}
 ## Need to shuffle data, all classes in order right now
-
+set.seed(1)
+iris <- iris[sample(nrow(iris)), ]
 ```
 
 (d) What are some cases where we need to be careful how we split our data into
     training and validation sets? What is the usual assumption when we split the
     data randomly?
+
+    **Imbalanced Classes**: If the dataset has imbalanced classes, a random
+    split might lead to a training set with insufficient examples of the
+    minority class.
+
+    **Small Datasets**: For small datasets, random splitting can result in
+    training sets that are too small to build a robust model.
+
+    **Independent and Identically Distributed (IID)**: The usual assumption when
+    splitting data randomly is that the observations are independent and
+    identically distributed. This means that each observation is generated from
+    the same distribution and is independent of all other observations. Under
+    this assumption, random splitting is appropriate because it ensures that
+    both training and validation sets are representative samples of the overall
+    distribution of the data.
 
 (e) Now, split the `iris` data into a training and validation set. Use 30% of
     the data for the validation set. Make sure to use `set.seed()` (see Lab 01
@@ -332,7 +352,12 @@ attach(iris)
     and validation sets.
 
 ```{r}
-
+set.seed(1)
+num_train <- floor(0.7*nrow(iris))
+train <- iris[1:num_train,]
+val <- iris[(num_train+1):nrow(iris),]
+print(dim(train))
+print(dim(val))
 ```
 
 (f) Fit a logistic regression classifier to your `iris` training data. Display a
@@ -340,7 +365,10 @@ attach(iris)
     and `Petal.Width` as predictors.
 
 ```{r}
-
+glm.fit <- glm(Species2 ~ Sepal.Length + Sepal.Width + 
+                 Petal.Length + Petal.Width, 
+               data = train, family = binomial)
+summary(glm.fit)
 ```
 
 (g) Explore adding some interaction terms or dropping terms from the model that
@@ -349,24 +377,45 @@ attach(iris)
     your final model.
 
 ```{r}
-
+glm.fit2 <- glm(Species2 ~ Sepal.Length * Sepal.Width + 
+                  Petal.Length * Petal.Width, 
+               data = train, family = binomial)
+summary(glm.fit2)
 ```
 
 (h) Use the `predict()` function to predict the species for your validation
     data. Use `predict()` for both models, from part (f) and part (g).
 
 ```{r}
-
+glm.probs <- predict(glm.fit, val, type = "response")
+glm.probs2 <- predict(glm.fit2, val, type = "response")
 ```
 
 (i) Calculate the confusion matrix and accuracy for your two models, from parts
     (f) and (g). Make sure to first convert your predicted probabilities from
-    part (h) to `Species2`. Assume that a probability of greater than 0.5
-    corresponds to the positive class species, i.e. `Species2=1` and
-    `Species = setosa`. Which model would you select and why?
+        part (h) to `Species2`. Assume that a probability of greater than 0.5
+        corresponds to the positive class species, i.e. `Species2=1` and
+        `Species = setosa`. Which model would you select and why?
+
+        Both model have a 100% accuracy, possibly due to perfect or near-perfect
+        separation in the data, where the predictors can perfectly (or almost
+        perfectly) predict the outcome variable. In this case, Species2 can be
+        perfectly predicted.
 
 ```{r}
+# model 1
+glm.pred <- rep(0, 45)
+glm.pred[glm.probs > 0.5] <- 1
+table(glm.pred, val$Species2)
+mean(glm.pred == val$Species2) # accuracy
+```
 
+```{r}
+# model 2
+glm.pred2 <- rep(0, 45)
+glm.pred2[glm.probs2 > 0.5] <- 1
+table(glm.pred2, val$Species2)
+mean(glm.pred2 == val$Species2) # accuracy
 ```
 
 ### 2. Conceptual
@@ -374,3 +423,15 @@ attach(iris)
 Think about the `Caravan` example above. Is accuracy a good measure to evaluate
 potential classifiers on this data set? Why or why not? What might be some
 better metrics to use to evaluate classifiers for imbalanced data sets?
+
+No, accuracy may not be a good measure because a model that always predicts the
+majority class (no purchase) will achieve an accuracy of 94%, which might give a
+false sense of a well-performing mode.
+
+A metric we could use is precision, which is calculated by TP/(TP + FP). It
+measures the proportion of true positive predictions among all instances that
+are predicted as positive.
+
+Another one, which is similar, is sensitivity, which is calculated by TP/(TP +
+FN). It measures the proportion of true positive predictions among all actual
+positive instances.
