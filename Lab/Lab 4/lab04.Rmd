@@ -1,33 +1,36 @@
 ---
 title: "Project Coding in R"
-author: "Your Name"
+author: "Ken Ye"
 date: "9/20/2023"
 output: pdf_document
 ---
 
 ## 1. Announcements and References
 
-This lab will be focused on various data scraping, subsetting and manipulation exercises to help you for your projects. We'll work through these examples as a class.
-
+This lab will be focused on various data scraping, subsetting and manipulation
+exercises to help you for your projects. We'll work through these examples as a
+class.
 
 **References:**
 
-- Interpreting interaction terms in regression:
-- <https://stats.idre.ucla.edu/r/faq/how-can-i-explain-a-continuous-by-continuous-interaction/> 
-- R For Data Science: <https://r4ds.had.co.nz/>
-- STA 523 at Duke: <http://www2.stat.duke.edu/~cr173/Sta523_Fa18/>
-- Vignette on Web Scraping in R: <https://cran.r-project.org/web/packages/rvest/vignettes/selectorgadget.html>
-
-
+-   Interpreting interaction terms in regression:
+-   <https://stats.idre.ucla.edu/r/faq/how-can-i-explain-a-continuous-by-continuous-interaction/>
+-   R For Data Science: <https://r4ds.had.co.nz/>
+-   STA 523 at Duke: <http://www2.stat.duke.edu/~cr173/Sta523_Fa18/>
+-   Vignette on Web Scraping in R:
+    <https://cran.r-project.org/web/packages/rvest/vignettes/selectorgadget.html>
 
 ## 2. Data Transformation and Visualization
 
-This part of the lab follows Ch. 5 from https://r4ds.had.co.nz/.  For full details and explanations of functions, please see this book, *R for Data Science*. We will only work with the code portions here. We will cover ``dplyr`` and ``ggplot2``.
+This part of the lab follows Ch. 5 from <https://r4ds.had.co.nz/>. For full
+details and explanations of functions, please see this book, *R for Data
+Science*. We will only work with the code portions here. We will cover `dplyr`
+and `ggplot2`.
 
-The dataset of interest will be ``nycflights13``, which contains information about all 336,776 flights that departed from NYC in 2013.  
+The dataset of interest will be `nycflights13`, which contains information about
+all 336,776 flights that departed from NYC in 2013.
 
-First, in the console, install the packages ``nycflights13`` and ``tidyverse``.
-
+First, in the console, install the packages `nycflights13` and `tidyverse`.
 
 ```{r, message = FALSE, warning = FALSE}
 library("nycflights13")
@@ -35,57 +38,70 @@ library("tidyverse")
 head(flights)
 ```
 
-The ``flights`` data is stored as a **tibble**, which is a dataframe with some nice properties that work well in the ``tidyverse`` packages. Under each column name, there is information about the data type of each variable.  The data types for this data include:
+The `flights` data is stored as a **tibble**, which is a dataframe with some
+nice properties that work well in the `tidyverse` packages. Under each column
+name, there is information about the data type of each variable. The data types
+for this data include:
 
-- ``int``: integer
-- ``dbl``: double precision, real number
-- ``chr``: character vectors or strings
-- ``dttm``: date-time
+-   `int`: integer
+-   `dbl`: double precision, real number
+-   `chr`: character vectors or strings
+-   `dttm`: date-time
 
+We are going to focus on 5 important `dplyr` functions that can be used to
+manipulate and subset data. These functions are:
 
-We are going to focus on 5 important ``dplyr`` functions that can be used to manipulate and subset data. These functions are:
+1.  `filter()`: pick observations by their values (works on rows)
+2.  `arrange()`: reorder the rows of a dataframe or tibble
+3.  `select()`: pick variables by their names (works on columns)
+4.  `mutate()`: create new variables with functions of existing variables
+5.  `summarise()`: create summary values by collpasing many values
 
-1. ``filter()``: pick observations by their values (works on rows)
-2. ``arrange()``: reorder the rows of a dataframe or tibble
-3. ``select()``: pick variables by their names (works on columns)
-4. ``mutate()``: create new variables with functions of existing variables
-5. ``summarise()``:  create summary values by collpasing many values
-
-Another useful function to know is ``group_by()``.  Instead of operating on the entire dataframe, ``group_by()`` changes the function so that it only works on a group-by-group basis.
+Another useful function to know is `group_by()`. Instead of operating on the
+entire dataframe, `group_by()` changes the function so that it only works on a
+group-by-group basis.
 
 For all of these functions, the syntax is as follows:
 
-- 1st Argument: Data Frame
-- Following Argument(s): describe what to do with the dataframe, use variable names without quotations here
-- Result: new data frame
+-   1st Argument: Data Frame
+-   Following Argument(s): describe what to do with the dataframe, use variable
+    names without quotations here
+-   Result: new data frame
 
-### filter() 
+### filter()
 
-This function can be used to subset observations, based on their values (i.e. selecting by row).  Below is code to select all flights on January 1st:
+This function can be used to subset observations, based on their values (i.e.
+selecting by row). Below is code to select all flights on January 1st:
 
 ```{r}
 filter(flights, month == 1, day == 1)
 ```
 
-``dplyr`` never modifies the input, so if we want to have a new data frame to save the result, we need to use the assignment operator to assign the filtered dataframe to a new name:
+`dplyr` never modifies the input, so if we want to have a new data frame to save
+the result, we need to use the assignment operator to assign the filtered
+dataframe to a new name:
 
 ```{r}
 jan1 <- filter(flights, month == 1, day == 1)
 ```
 
-
-
-
-Suppose we want to select all rows for flights that left early.  How would we use the ``filter()`` function to do this?
+Suppose we want to select all rows for flights that left early. How would we use
+the `filter()` function to do this?
 
 ```{r}
 flights %>% filter(dep_delay < 0)
-
 ```
 
-Q: Is the above output the same as ``filter(flights, dep_delay < 0)``? Check.
+Q: Is the above output the same as `filter(flights, dep_delay < 0)`? Check.
 
-When filtering, we need to use comparison operators to do so.  What are the symbols for the 6 primary comparison operators in ``R`` and what does each do?
+```{r}
+filter(flights,dep_delay < 0)
+```
+
+Yes, they are the same.
+
+When filtering, we need to use comparison operators to do so. What are the
+symbols for the 6 primary comparison operators in `R` and what does each do?
 
 ```{r}
 # >
@@ -106,13 +122,14 @@ sqrt(2) ^ 2 == 2
 1 / 49 * 49 == 1
 ```
 
-
 Why are these results not as expected?
+
 ```{r}
 ## Finite precision for computers
 ```
 
-When we want to test equality with floating point numbers, we can use the ``near()`` function instead:
+When we want to test equality with floating point numbers, we can use the
+`near()` function instead:
 
 ```{r}
 near(sqrt(2) ^ 2,  2)
@@ -120,58 +137,59 @@ near(sqrt(2) ^ 2,  2)
 near(1 / 49 * 49, 1)
 ```
 
-Boolean operators can be used to use multiple arguments. The Boolean operator for *and* is ``&``, for *or* is ``|`` and for *not* is ``!``.  
+Boolean operators can be used to use multiple arguments. The Boolean operator
+for *and* is `&`, for *or* is `|` and for *not* is `!`.
 
-
-One common logical operation is exclusive or, ``XOR``. Visually, what does this logical operation look like for a venn diagram with variables ``x`` and ``y``?
+One common logical operation is exclusive or, `XOR`. Visually, what does this
+logical operation look like for a venn diagram with variables `x` and `y`?
 
 ```{r}
 ## XOR is x or y but not both, middle of venn diagram is only thing not shaded
 ```
 
-
 This code finds all flights that departed in November or December:
-
 
 ```{r}
 filter(flights, month == 11 | month == 12)
 ```
 
-
-How would we select all flights that had an arrival delay of less than 10 minutes and occurred in September?
+How would we select all flights that had an arrival delay of less than 10
+minutes and occurred in September?
 
 ```{r}
-flights %>% filter(arr_delay < 10 & month == 1)
+flights %>% filter(arr_delay < 10 & month == 9)
 ```
 
-Another really useful comparison function is ``%in%``.  For example, ``x %in% y`` selects every row where ``x`` is one of the values in ``y``.  For example, the two following lines of code are equivalent:
+Another really useful comparison function is `%in%`. For example, `x %in% y`
+selects every row where `x` is one of the values in `y`. For example, the two
+following lines of code are equivalent:
 
 ```{r}
 filter(flights, month == 11 | month == 12)
 filter(flights, month %in% c(11, 12))
 ```
 
-De Morgan's law can be used for complicated expressions.  What is De Morgan's Law (from probability) and how would we write it in terms of R code?
+De Morgan's law can be used for complicated expressions. What is De Morgan's Law
+(from probability) and how would we write it in terms of R code?
 
 ```{r}
 # !(x & y) same as !x | !y
 # !(x | y) same as !x & !y
 ```
 
-
-We can use De Morgan's law to select flights that weren't delayed (on arrival or departure) by more than two hours:
+We can use De Morgan's law to select flights that weren't delayed (on arrival or
+departure) by more than two hours:
 
 ```{r}
 filter(flights, !(arr_delay > 120 | dep_delay > 120))
 filter(flights, arr_delay <= 120, dep_delay <= 120)
 ```
 
+Most real life data includes missing values. What are some possible reasons that
+data could be missing and what might the implications be for later modeling?
 
-Most real life data includes missing values.  What are some possible reasons that data could be missing and what might the implications be for later modeling?
-
-
-Missing values are represented as ``NA`` in ``R``. ``NA`` values are "contagious", so almost any operation involving an ``NA`` will also be ``NA``.
-
+Missing values are represented as `NA` in `R`. `NA` values are "contagious", so
+almost any operation involving an `NA` will also be `NA`.
 
 ```{r}
 NA > 5
@@ -180,8 +198,8 @@ NA + 10
 NA / 2
 ```
 
-
 What do you expect the result to be for the following code:
+
 ```{r, eval = FALSE}
 NA == NA
 ```
@@ -190,19 +208,21 @@ NA == NA
 NA == NA
 ```
 
-We can use the ``is.na()`` function to determine if a value is missing or is ``NA``.
+We can use the `is.na()` function to determine if a value is missing or is `NA`.
 
-The ``filter()`` function only includes rows that are ``TRUE``, ``FALSE`` and ``NA`` rows are excluded.
+The `filter()` function only includes rows that are `TRUE`, `FALSE` and `NA`
+rows are excluded.
 
 ### arrange()
 
-``arrange()`` changes the order of rows instead of selecting them.  
+`arrange()` changes the order of rows instead of selecting them.
 
 ```{r}
 arrange(flights, year, month, day)
 ```
 
-The ``desc()`` function can be used to re-order by a specific column in descending order:
+The `desc()` function can be used to re-order by a specific column in descending
+order:
 
 ```{r}
 arrange(flights, desc(dep_delay))
@@ -216,10 +236,10 @@ arrange(df, x)
 arrange(df, desc(x))
 ```
 
-
 ### select()
 
-The ``select()`` function can be used to select columns. This is especially useful when we don't want to include all variables in our analysis. 
+The `select()` function can be used to select columns. This is especially useful
+when we don't want to include all variables in our analysis.
 
 We can select columns by name:
 
@@ -239,18 +259,20 @@ We can also select all columns except some specific ones:
 select(flights, -(year:day))
 ```
 
-Here are some useful helper functions to use with ``select()``:
+Here are some useful helper functions to use with `select()`:
 
-- ``starts_with("abc")``
-- ``ends_with("xyz")``
-- ``contains("ijk")``
-- ``matches("(.)\\1")`` - selects variables based on a regular expression, this regular expression matches variables that contain repeated characters
-- ``num_range("x", 1:3)``- matches ``x1``, ``x2``, and ``x3``
-
+-   `starts_with("abc")`
+-   `ends_with("xyz")`
+-   `contains("ijk")`
+-   `matches("(.)\\1")` - selects variables based on a regular expression, this
+    regular expression matches variables that contain repeated characters
+-   `num_range("x", 1:3)`- matches `x1`, `x2`, and `x3`
 
 ### mutate()
 
-It is often really useful to add new columns to the data that are functions of existing columns and the ``mutate()`` function can be used for this. ``mutate()`` always adds new columns to the end of the data frame.
+It is often really useful to add new columns to the data that are functions of
+existing columns and the `mutate()` function can be used for this. `mutate()`
+always adds new columns to the end of the data frame.
 
 ```{r}
 flights_sml <- select(flights, 
@@ -266,7 +288,7 @@ mutate(flights_sml,
 )
 ```
 
-If you only want to keep the new variables, use ``transmute()``:
+If you only want to keep the new variables, use `transmute()`:
 
 ```{r}
 transmute(flights,
@@ -276,13 +298,13 @@ transmute(flights,
 )
 ```
 
+The main requirement for functions that can be used with `mutate()` is that the
+function is vectorized. This means that the function has to take a vector of
+values as input and return a vector with the same number of values as an output.
 
-The main requirement for functions that can be used with ``mutate()`` is that the function is vectorized. This means that the function has to take a vector of values as input and return a vector with the same number of values as an output.
-
-Some examples are:
-- arithmetic operators: ``+``, ``-``, ``*``, ``/``, ``^``
-- logs: ``log()``, ``log2()``, ``log10()``
-- cummulative and rolling aggregates:  ``cumsum()``, ``cumprod()``, ``cummin()``, ``cummax()`` and ``cummean()``
+Some examples are: - arithmetic operators: `+`, `-`, `*`, `/`, `^` - logs:
+`log()`, `log2()`, `log10()` - cumulative and rolling aggregates: `cumsum()`,
+`cumprod()`, `cummin()`, `cummax()` and `cummean()`
 
 ```{r}
 x <- 1:10
@@ -290,10 +312,9 @@ cumsum(x)
 cummean(x)
 ```
 
-- logical comparisons
+-   logical comparisons
 
-
-How would we add a column to the ``flights`` tibble that is the total delay?
+How would we add a column to the `flights` tibble that is the total delay?
 
 ```{r}
 flights %>% mutate(total_delay = dep_delay + arr_delay)
@@ -301,21 +322,21 @@ flights %>% mutate(total_delay = dep_delay + arr_delay)
 
 ### summarise()
 
-The ``summarise()`` function collapses a data frame into a single row.
+The `summarise()` function collapses a data frame into a single row.
 
 ```{r}
 summarise(flights, delay = mean(dep_delay, na.rm = TRUE))
 ```
 
-It is more useful to pair ``summarise()`` with the ``group_by()`` function.  
+It is more useful to pair `summarise()` with the `group_by()` function.
 
 ```{r}
 by_day <- group_by(flights, year, month, day)
 summarise(by_day, delay = mean(dep_delay, na.rm = TRUE))
 ```
 
-
-We can use pipes to chain together multiple functions.  What does the following code do step by step?
+We can use pipes to chain together multiple functions. What does the following
+code do step by step?
 
 ```{r, eval = FALSE}
 delays <- flights %>% 
@@ -330,20 +351,20 @@ delays <- flights %>%
 
 ```{r}
 delays <- flights %>% 
-  group_by(dest) %>% 
+  group_by(dest) %>%  # group by destination
   summarise(
-    count = n(),
-    dist = mean(distance, na.rm = TRUE),
-    delay = mean(arr_delay, na.rm = TRUE)
+    count = n(),  # count number of times
+    dist = mean(distance, na.rm = TRUE), # calculate mean distance
+    delay = mean(arr_delay, na.rm = TRUE) # calculate mean delay
   ) %>% 
-  filter(count > 20, dest != "HNL")
+  filter(count > 20, dest != "HNL") # keep those with count > 20 and destination not HNL
 ```
 
+The `na.rm = TRUE` argument drops all rows with `NA` values from the computation
+when we use `group_by()`.
 
-The ``na.rm = TRUE`` argument drops all rows with ``NA`` values from the computation when we use ``group_by()``.
-
-``count()``, ``mean()`` and ``median()`` are some useful arguments to the ``group_by()`` function.
-
+`count()`, `mean()` and `median()` are some useful arguments to the `group_by()`
+function.
 
 ```{r}
 flights %>% 
@@ -351,14 +372,14 @@ flights %>%
   summarise(mean = mean(dep_delay, na.rm = TRUE))
 ```
 
-
 ## 3. Visualization with ggplot
 
-Check out Ch.3 of https://r4ds.had.co.nz/data-visualisation.html for some great discussion about ``ggplot`` and the grammar of graphics. For this part of the lab we will build on our data subsetting skills to create some nice plots using ``ggplot``.
-
+Check out Ch.3 of <https://r4ds.had.co.nz/data-visualisation.html> for some
+great discussion about `ggplot` and the grammar of graphics. For this part of
+the lab we will build on our data subsetting skills to create some nice plots
+using `ggplot`.
 
 We'll walk through a few example plots:
-
 
 ```{r}
 
@@ -366,7 +387,6 @@ ggplot(flights, aes(x = dep_delay, y = arr_delay, col = factor(month))) +
   geom_point()
 
 ```
-
 
 ```{r}
 
@@ -376,54 +396,106 @@ ggplot(flights, aes(x = dep_delay)) +
 
 ```
 
-
-1. Select all of the flights that occur within the first 10 days of each month.  Then, create a scatter plot using two of the numeric/continuous variables in the ``flights`` data set.  Color your plot points by the day of the month.
-
-```{r}
-
-
-```
-
-
-2. Make a histogram of the scheduled departure time for the ``flights`` data. Change the label for the x-axis to be "Scheduled Departure Time" (hint look at ``?labs()``).  Add a title to your plot.
+1.  Select all of the flights that occur within the first 10 days of each month.
+    Then, create a scatter plot using two of the numeric/continuous variables in
+    the `flights` data set. Color your plot points by the day of the month.
 
 ```{r}
+first10d <- flights |> 
+  filter(day <= 10)
 
-
+ggplot(first10d, 
+       aes(x = distance, 
+           y = air_time, 
+           col = factor(month))) +
+  geom_point()
 ```
 
+2.  Make a histogram of the scheduled departure time for the `flights` data.
+    Change the label for the x-axis to be "Scheduled Departure Time" (hint look
+    at `?labs()`). Add a title to your plot.
+
+```{r}
+ggplot(flights, 
+       aes(x = sched_dep_time)) +
+  geom_histogram() + 
+  labs(x = "Scheduled Departure Time",
+    title = "Distribution of Scheduled Departure Times")
+```
 
 ## 3. Model Diagnostics
 
-Randomly subset the ``flights`` data to only include 5000 rows.
+Randomly subset the `flights` data to only include 5000 rows.
 
 ```{r}
+set.seed(1)
+flights_sample <- flights |>
+  sample_n(5000)
 
-
+head(flights_sample)
 ```
 
-
-Using the ``lm()`` function, build a regression model trying to predict the ``arr_delay`` for the ``flights`` data.  Use the following variables as predictors:
-``month``, ``day``, ``dep_time``, ``arr_time``, ``air_time`` and ``distance``.
+Using the `lm()` function, build a regression model trying to predict the
+`arr_delay` for the `flights` data. Use the following variables as predictors:
+`month`, `day`, `dep_time`, `arr_time`, `air_time` and `distance`.
 
 ```{r}
+lm <- lm(arr_delay ~ month + day + dep_time + arr_time + air_time + distance, data = flights)
 
-
-
+summary(lm)
 ```
 
-Without running any additional code, how does the model fit look?  Are there any variables that we can drop from the model?
+Without running any additional code, how does the model fit look? Are there any
+variables that we can drop from the model?
 
+The model has a low R-squared value, indicating a poor fit to the data.
 
-Let's look at some model diagnostics, using the ``plot()`` function on our ``lm`` object.  What conclusions should we draw from the various diagnostic plots?
+The variables month and day are not statistically significant and can be
+considered for removal from the model to simplify it without losing much
+explanatory power.
+
+Despite the low R-squared value, the model is statistically significant,
+suggesting that it does have some predictive power.
+
+Further analysis and potentially adding other relevant variables could help in
+improving the model fit.
+
+Let's look at some model diagnostics, using the `plot()` function on our `lm`
+object. What conclusions should we draw from the various diagnostic plots?
 
 ```{r}
-
-
-
+plot(lm)
 ```
 
-What is your conclusion about this regression model and why?  How might we improve our model fit?
+In the Residuals vs Fitted graph, the residuals doesn't seem to be randomly
+scattered, and several especially high values are highlighted by R.
 
+In the Q-Q Residuals graph, for quantiles \> 1, the standardized residuals
+deviate largely from the y = x line, indicating violation of normality.
 
+In the Scale-Location graph, similar to the Residuals vs Fitted graph, the
+residuals doesn't seem to be randomly scattered, and several especially high
+values are highlighted by R.
 
+In the Residuals vs Leverage graph, several points with high residual are
+highlighted as influential by R.
+
+What is your conclusion about this regression model and why? How might we
+improve our model fit?
+
+The current regression model has a low R-squared value of 0.1281, indicating it
+only explains about 12.81% of the variance in the arrival delay. This suggests
+the model is not fitting the data well. Moreover, the month and day variables
+are not statistically significant predictors, as indicated by their high
+p-values.
+
+To improve the model, we can consider the following steps:
+
+Removing insignificant variables: Start by removing the month and day variables
+to simplify the model.
+
+Adding new variables or interaction terms: Incorporate other potentially
+relevant variables or interaction terms to capture more complexity.
+
+Variable transformation: Experiment with different transformations of the
+existing variables to address potential non-linearity.
