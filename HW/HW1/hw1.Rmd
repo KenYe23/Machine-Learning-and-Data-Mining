@@ -123,17 +123,11 @@ holding all other variables constant.
 
 This problem focuses on the collinearity problem.
 
-(a) Perform the following commands in R:
-\> set .seed (1)
-\> x1=runif (100)
-\> x2
-=0.5\* x1+rnorm (100) /10
-\> y=2+2\* x1 +0.3\* x2+rnorm (100)
-The last line
-corresponds to creating a linear model in which y is
-a function of x1 and x2.
-Write out the form of the linear model.
-What are the regression coefficients?
+(a) Perform the following commands in R: \> set .seed (1) \> x1=runif (100) \>
+    x2 =0.5\* x1+rnorm (100) /10 \> y=2+2\* x1 +0.3\* x2+rnorm (100) The last
+    line corresponds to creating a linear model in which y is a function of x1
+    and x2. Write out the form of the linear model. What are the regression
+    coefficients?
 
 ```{r}
 set.seed(1)
@@ -141,8 +135,6 @@ x1 = runif(100)
 x2 = 0.5 * x1 + rnorm(100) / 10
 y = 2 + 2 * x1 + 0.3 * x2 + rnorm(100)
 ```
-
-
 
 The linear model is
 
@@ -153,7 +145,7 @@ where $$\epsilon_i \sim i.i.d. N(0, 100) $$.
 The coefficients are $$\beta_0 = 2$$, $$\beta_1 = 2$$, and $$\beta_2 = 0.3 $$.
 
 (b) What is the correlation between x1 and x2? Create a scatterplot displaying
-the relationship between the variables.
+    the relationship between the variables.
 
 ```{r}
 cor(x1,x2)
@@ -167,11 +159,10 @@ The correlation between x1 and x2 is 0.835, which is quite high. In addition,
 from the scatter plot we can learn that there is a strong positive linear
 relationship b/w x1 and x2.
 
-(c) Using this data, fit a least squares regression to predict y using
-x1 and x2. Describe the results obtained. What are ˆ B0, ˆ B1, and
-ˆ B2? How do
-these relate to the true B0, B1, and B2? Can you reject the null hypothesis H0 :
-B1 = 0? How about the null hypothesis H0 : B2 = 0?
+(c) Using this data, fit a least squares regression to predict y using x1 and
+    x2. Describe the results obtained. What are ˆ B0, ˆ B1, and ˆ B2? How do
+    these relate to the true B0, B1, and B2? Can you reject the null hypothesis
+    H0 : B1 = 0? How about the null hypothesis H0 : B2 = 0?
 
 ```{r}
 lsr <- lm(y ~ x1 + x2)
@@ -197,17 +188,13 @@ We reject the null hypothesis that $$\beta_1 = 0$$ because p-value = 0.0487 \<
 We fail to reject the null hypothesis that $$\beta_2 = 0$$ because p-value =
 0.3754 \> 0.05 threshold.
 
-(d) Now fit a least squares regression to predict y using only x1.
-Comment on
-your results. Can you reject the null hypothesis
-H0 : B1 = 0?
+(d) Now fit a least squares regression to predict y using only x1. Comment on
+    your results. Can you reject the null hypothesis H0 : B1 = 0?
 
 ```{r}
 lsr2 <- lm(y ~ x1)
 summary(lsr2)
 ```
-
-
 
 The fitted linear model is
 
@@ -223,17 +210,13 @@ the previous lsr model.
 We reject the null hypothesis that $$\beta_1 = 0$$ because p-value = 2.66e-06 \<
 0.05 threshold.
 
-(e) Now fit a least squares regression to predict y using only x2.
-Comment on
-your results. Can you reject the null hypothesis
-H0 : B1 = 0?
+(e) Now fit a least squares regression to predict y using only x2. Comment on
+    your results. Can you reject the null hypothesis H0 : B1 = 0?
 
 ```{r}
 lsr3 <- lm(y ~ x2)
 summary(lsr3)
 ```
-
-
 
 The fitted linear model is
 
@@ -250,7 +233,7 @@ We reject the null hypothesis that $$\beta_1 = 0$$ because p-value = 1.37e-05 \<
 0.05 threshold.
 
 (f) Do the results obtained in (c)--(e) contradict each other? Explain your
-answer.
+    answer.
 
 We know that x1 and x2 has a high correlation = 0.835. As a result, if we use
 both of them as predictors in the regression model, only one is statistically
