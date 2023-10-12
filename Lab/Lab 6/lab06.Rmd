@@ -103,7 +103,6 @@ $\lambda$.
 ridge.mod$lambda[60]
 coef(ridge.mod)[,60]
 sqrt(sum(coef(ridge.mod)[-1,60]^2))
-
 ```
 
 We can use the `predict()` function for a number of different tasks. For
@@ -166,7 +165,10 @@ $\lambda = 0$.
 ridge.pred <- predict(ridge.mod, s=0, x = x[train,], y = y[train],
                       newx = x[test,], exact = T)
 mean((ridge.pred - y.test)^2)
+```
 
+```{r}
+plot(ridge.mod)
 ```
 
 ```{r}
@@ -192,7 +194,6 @@ cv.out <- cv.glmnet(x[train,], y[train], alpha = 0)
 plot(cv.out)
 bestlam <- cv.out$lambda.min
 bestlam
-
 ```
 
 In the plot above, the numbers across the top of the plot are the number of
@@ -270,16 +271,98 @@ other variables in the College data set.
 
 (a) Split the data set into a training set and a test set.
 
+    ```{r}
+    names(College)
+    dim(College)
+    ```
+
+    ```{r}
+    # remove null obs
+    College <- na.omit(College)
+    dim(College)
+    sum(is.na(College))
+    ```
+
+    ```{r}
+    x <- model.matrix(Apps ~ .,College)[,-1]
+    y <- College$Apps
+    ```
+
+    ```{r}
+    # split data
+    set.seed(1)
+    train <- sample(1:nrow(x), nrow(x)/2)
+    test <- setdiff(1:nrow(x), train)
+    y.test <- y[test]
+    ```
+
 (b) Fit a linear model using least squares on the training set, and report the
     test error obtained.
+
+    ```{r}
+    # linear regression
+    lm <- lm(y ~ x, subset = train)
+    lm.pred <- predict(lm, newx = x[test,])
+    ```
+
+    ```{r}
+    # calculate MSE
+    mean((lm.pred - y.test[1:length(lm.pred)])^2)
+    ```
 
 (c) Fit a ridge regression model on the training set, with $\lambda$ chosen by
     cross-validation. Report the test error obtained.
 
+    ```{r}
+    ridge.mod <- glmnet(x[train,], y[train], alpha = 0, lambda = grid)
+    plot(ridge.mod)
+    ```
+
+    ```{r}
+    # cv
+    set.seed(1)
+    cv.out <- cv.glmnet(x[train,], y[train], alpha = 0)
+    plot(cv.out)
+    bestlam <- cv.out$lambda.min
+    bestlam
+    ```
+
+    ```{r}
+    ridge.pred <- predict(ridge.mod, s = bestlam, newx = x[test,])
+    mean((ridge.pred - y.test)^2)
+    ```
+
 (d) Fit a lasso model on the training set, with $\lambda$ chosen by
-    crossvalidation. Report the test error obtained, along with the number of
+    cross-validation. Report the test error obtained, along with the number of
     non-zero coefficient estimates.
+
+    ```{r}
+    lasso.mod <- glmnet(x[train,], y[train], alpha = 1, lambda = grid)
+    plot(lasso.mod)
+    ```
+
+    ```{r}
+    set.seed(1)
+    cv.out <- cv.glmnet(x[train,], y[train], alpha = 1)
+    plot(cv.out)
+    bestlam <- cv.out$lambda.min
+    lasso.pred <- predict(lasso.mod, s = bestlam, newx = x[test,])
+    mean((lasso.pred - y.test)^2)
+    ```
+
+    ```{r}
+    out <- glmnet(x, y, alpha = 1, lambda = grid)
+    lasso.coef <- predict(out, type = "coefficients", s = bestlam)
+    lasso.coef
+    ```
+
+    The number of the non-zero coefficient estimates is 17.
 
 (e) Comment on the results obtained. How accurately can we predict the number of
     college applications received? Is there much difference among the test
     errors resulting from these three approaches?
+
+    Our prediction of the number of college applications received is not great,
+    as indicated by the high test MSE's. Among the three, least squares had the
+    highest MSE, 28865826, followed by Lasso's, 1116252. Ridge achieve the
+    lowest MSE among the three, of 976268.9.
