@@ -388,29 +388,158 @@ regression setting, where the goal is to predict `Sales`. Make sure to drop the
 Split the `Carseats` data into a training and test set, using 30% of the data
 for the test set.
 
+```{r}
+# Reset data set
+data(Carseats, package = "ISLR")
+```
+
+```{r}
+# Split data
+set.seed(123)
+test_indices <- sample(1:nrow(Carseats), 0.3 * nrow(Carseats))
+
+# Create the training and test datasets
+train.df <- Carseats[-test_indices, ]
+test.df  <- Carseats[test_indices, ]
+```
+
 ### 2. Regression Tree
 
 Fit a regular regression tree on the training data using cross validation.
 Decide at what level to prune the tree and how you decided this. Report the test
 MSE for your tree and plot your final tree.
 
+```{r}
+# Fit a regression tree on the training data using cross-validation
+cv.tree <- cv.tree(tree(Sales ~ ., data = train.df))
+
+# Determine the optimal tree size
+optimal_tree_size <- cv.tree$size[which.min(cv.tree$dev)]
+
+print(optimal_tree_size)
+```
+
+```{r}
+# Fit a tree with the optimal size on the training data
+reg_tree <- tree(Sales ~ ., 
+                 data = train.df, 
+                 control = tree.control(nobs = nrow(train.df), 
+                                        mincut = optimal_tree_size))
+
+# Make predictions on the test data
+test_preds <- predict(reg_tree, newdata = test.df)
+
+# Calculate the test MSE
+test_mse_reg <- mean((test_preds - test.df$Sales)^2)
+
+# Print the test MSE
+print(test_mse_reg)
+```
+
+```{r}
+# Plot the final tree
+plot(reg_tree)
+text(reg_tree, pretty = 0)
+```
+
 ### 3. Bagging
 
 Perform bagging for the `Carseats` data with 25 trees. Report the MSE on the
 test set.
+
+```{r}
+set.seed(123)
+
+# Perform bagging with 25 trees
+bagging_model <- randomForest(Sales ~ ., data = train.df, ntree = 25)
+
+# Make predictions on the test set
+test_preds <- predict(bagging_model, newdata = test.df)
+
+# Calculate the test MSE
+test_mse_bag <- mean((test_preds - test.df$Sales)^2)
+
+print(test_mse_bag)
+```
 
 ### 4. Random Forest
 
 Now, fit a random forest to the `Carseats` data. Report the variable importance
 as a plot and the MSE on the test set. Use $m = 3$.
 
+```{r}
+set.seed(123)
+
+# Fit a Random Forest with m = 3
+rf_model <- randomForest(Sales ~ ., data = train.df, mtry = 3)
+
+# Make predictions on the test set
+test_preds <- predict(rf_model, newdata = test.df)
+
+# Calculate the test MSE
+test_mse_rf <- mean((test_preds - test.df$Sales)^2)
+
+print(test_mse_rf)
+```
+
+```{r}
+importance(rf_model)
+```
+
+```{r}
+# Plot variable importance
+varImpPlot(rf_model)
+```
+
 ### 5. Boosting
 
 Finally, perform boosting on the `Carseats` data. Again, report the MSE on the
 test set. Use an interaction depth of 3.
+
+```{r}
+set.seed(123)
+
+# Fit a boosted regression model
+boosting_model <- gbm(Sales ~ ., data = train.df, distribution = "gaussian", interaction.depth = 3)
+
+# Make predictions on the test set
+test_preds <- predict(boosting_model, newdata = test.df)
+
+# Calculate the test MSE
+test_mse_boost <- mean((test_preds - test.df$Sales)^2)
+
+print(test_mse_boost)
+```
 
 ### 6. Model Selection
 
 Make a table/dataframe summarizing the MSE results for each model considered
 above. Which model would you select and why? Which variables appear important to
 the trees? Does this make sense in the context of the problem?
+
+```{r}
+library(knitr)
+library(kableExtra)
+
+# Create a data frame to store the MSE results
+model_names <- c("Regression Tree (k = 17)", "Bagging (25 trees)", "Random Forest (m = 3)", "Boosting (interaction depth 3)")
+mse_values <- c(test_mse_reg, test_mse_bag, test_mse_rf, test_mse_boost)
+results_df <- data.frame(Model = model_names, Test_MSE = mse_values)
+
+# Print the results
+kable(results_df)
+```
+
+Base on the table, I would choose the Boosting model (interaction depth 3) as it
+yields the lowest test MSE.
+
+```{r}
+# Plot variable importance
+varImpPlot(rf_model)
+```
+
+According to this importance plot, we see that price and shelf location have the
+highest importance. This makes sense because price obviously affect the number
+of sales as it's the primary factor for most consumers. Shelf location is also
+important because the more visible the product is, the more likely the consumers
+will see it and thus purchase the product.
