@@ -1,0 +1,10 @@
+---
+title: "HW3"
+author: "Ken Ye"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r}
+
+```
