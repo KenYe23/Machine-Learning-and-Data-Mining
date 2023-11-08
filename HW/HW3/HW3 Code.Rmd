@@ -5,6 +5,38 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
+# Question 4 (ISL Chapter 7, Exercise 9)
+
+This question uses the variables dis (the weighted mean of distancesto five
+Boston employment centers) and nox (nitrogen oxides concentrationin parts per 10
+million) from the Boston data. We will treatdis as the predictor and nox as the
+response.
+
+a\. Use the poly() function to fit a cubic polynomial regression to predict nox
+using dis. Report the regression output, and plot the resulting data and
+polynomial fits.
+
 ```{r}
 
 ```
+
+(b) Plot the polynomial fits for a range of different polynomialdegrees (say,
+    from 1 to 10), and report the associated residualsum of squares.
+
+    ```{r}
+
+    ```
+
+(c) Perform cross-validation or another approach to select the optimaldegree for
+    the polynomial, and explain your results.
+
+(d) Use the bs() function to fit a regression spline to predict noxusing dis.
+    Report the output for the fit using four degrees offreedom. How did you
+    choose the knots? Plot the resulting fit.
+
+(e) Now fit a regression spline for a range of degrees of freedom, andplot the
+    resulting fits and report the resulting RSS. Describe theresults obtained.
+
+(f) Perform cross-validation or another approach in order to selectthe best
+    degrees of freedom for a regression spline on this data.Describe your
+    results.
