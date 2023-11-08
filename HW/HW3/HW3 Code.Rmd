@@ -7,36 +7,243 @@ output: pdf_document
 
 # Question 4 (ISL Chapter 7, Exercise 9)
 
-This question uses the variables dis (the weighted mean of distancesto five
-Boston employment centers) and nox (nitrogen oxides concentrationin parts per 10
-million) from the Boston data. We will treatdis as the predictor and nox as the
-response.
+This question uses the variables dis (the weighted mean of distances to five
+Boston employment centers) and nox (nitrogen oxides concentration in parts per
+10 million) from the Boston data. We will treat dis as the predictor and nox as
+the response.
+
+```{r}
+library(MASS)
+library(boot)
+library(splines)
+data("Boston")
+attach(Boston)
+```
 
 a\. Use the poly() function to fit a cubic polynomial regression to predict nox
 using dis. Report the regression output, and plot the resulting data and
 polynomial fits.
 
 ```{r}
-
+# Fit cubic polynomial regression model
+cubic_model <- lm(nox ~ poly(dis, 3))
+summary(cubic_model)
 ```
 
-(b) Plot the polynomial fits for a range of different polynomialdegrees (say,
-    from 1 to 10), and report the associated residualsum of squares.
+```{r}
+# Plot
+dis_seq <- seq(min(dis), max(dis), length.out = nrow(Boston))
+
+predictions <- predict(cubic_model, 
+                         newdata = data.frame(dis = dis_seq),
+                         se.fit = TRUE)
+
+predicted_nox <- predictions$fit
+se <- predictions$se.fit
+
+plot(dis, nox, pch = 20, col = "blue")
+lines(dis_seq, predicted_nox, col = "red", lwd = 2)
+lines(dis_seq, predicted_nox + 2 * se, col = "green", lty = 2)
+lines(dis_seq, predicted_nox - 2 * se, col = "green", lty = 2)
+title("Cubic Polynomial Regression Model")
+```
+
+(b) Plot the polynomial fits for a range of different polynomial degrees (say,
+    from 1 to 10), and report the associated residual sum of squares.
 
     ```{r}
-
+    # Fit degree 1-10 models and plot
+    par(mfrow = c(2, 5))
+    rss_vals <- numeric(10)
+    for (i in 1:10){
+      model <- lm(nox ~ poly(dis, i))
+      
+      dis_seq <- seq(min(dis), max(dis), length.out = nrow(Boston))
+      
+      predictions <- predict(model, 
+                             newdata = data.frame(dis = dis_seq),
+                             se.fit = TRUE)
+      
+      predicted_nox <- predictions$fit
+      se <- predictions$se.fit
+      
+      plot(dis, nox, pch = 20, col = "blue",
+           main = bquote("Degree" ~ .(i)))
+      lines(dis_seq, predicted_nox, col = "red", lwd = 2)
+      lines(dis_seq, predicted_nox + 2 * se, col = "green", lty = 2)
+      lines(dis_seq, predicted_nox - 2 * se, col = "green", lty = 2)
+      
+      rss_vals[i] = sum(model$residuals^2)
+    }
     ```
 
-(c) Perform cross-validation or another approach to select the optimaldegree for
-    the polynomial, and explain your results.
+    ```{r}
+    # Plot RSS
+    plot(rss_vals, 
+         xlab = "Polynomial Degree", 
+         ylab = "RSS", 
+         main = "RSS vs Polynomial Degree",
+         ylim = c(0, 5))
+    axis(1, at = 1:10, labels = 1:10)
+    text(1:10, rss_vals, labels = round(rss_vals, digits = 2), pos = 3)
+    ```
 
-(d) Use the bs() function to fit a regression spline to predict noxusing dis.
-    Report the output for the fit using four degrees offreedom. How did you
+    The above graph shows the RSS values for polynomial degree 1-10.
+
+(c) Perform cross-validation or another approach to select the optimal degree
+    for the polynomial, and explain your results.
+
+    ```{r}
+    # Perform CV
+    set.seed(1)
+    cv.error <- numeric(10)
+    for (i in 1:10){
+      fit = glm(nox ~ poly(dis,i))
+      cv.error[i] = cv.glm(Boston,fit, K =10)$delta[1]
+    }
+
+    print(cv.error)
+    best_degree <- which.min(cv.error)
+    cat("The degree with the smallest cross-validation error is", best_degree)
+    ```
+
+    ```{r}
+    # Plot CV
+    plot(cv.error, 
+         type = "b",
+         xlab = "Polynomial Degree", 
+         ylab = "CV Error", 
+         main = "CV Error vs Polynomial Degree")
+    abline(v = 4, col = "red", lwd = 3, lty = 2)
+    ```
+
+    We performed 10-fold cross validation and computed the validation error for
+    different polynomial degrees (1-10). The degree that yielded the minimum CV
+    error is degree 4, which had an error of 0.003863342, and this implies
+    degree 4 might be the optimal degree for this question, but test MSPE needs
+    to be assessed to prove it.
+
+(d) Use the bs() function to fit a regression spline to predict nox using dis.
+    Report the output for the fit using four degrees of freedom. How did you
     choose the knots? Plot the resulting fit.
 
-(e) Now fit a regression spline for a range of degrees of freedom, andplot the
-    resulting fits and report the resulting RSS. Describe theresults obtained.
+    To choose the knots, we know that cubic spline with K knots would have K + 4
+    parameters or degrees of freedom. Therefore, with four degrees of freedom we
+    can only have a cubic spline with zero knot.
 
-(f) Perform cross-validation or another approach in order to selectthe best
-    degrees of freedom for a regression spline on this data.Describe your
+    ```{r}
+    # Fit cubic spline
+    cs.fit <- lm(nox ~ bs(dis, df = 4))
+    summary(cs.fit)
+    ```
+
+    ```{r}
+    # Plot
+    dis_seq <- seq(min(dis), max(dis), length.out = nrow(Boston))
+
+    predictions <- predict(cs.fit, 
+                             newdata = data.frame(dis = dis_seq),
+                             se.fit = TRUE)
+
+    predicted_nox <- predictions$fit
+    se <- predictions$se.fit
+
+    plot(dis, nox, pch = 20, col = "blue")
+    lines(dis_seq, predicted_nox, col = "red", lwd = 2)
+    lines(dis_seq, predicted_nox + 2 * se, col = "green", lty = 2)
+    lines(dis_seq, predicted_nox - 2 * se, col = "green", lty = 2)
+    title("Cubic Regresssion Spline")
+    ```
+
+(e) Now fit a regression spline for a range of degrees of freedom, and plot the
+    resulting fits and report the resulting RSS. Describe the results obtained.
+
+    ```{r}
+    # Fit df 5-13 splines and plot
+    par(mfrow = c(3, 3))
+    rss_vals <- numeric(9)
+    for (i in 5:13){
+      cs.fit <- lm(nox ~ bs(dis, df = i))
+      
+      dis_seq <- seq(min(dis), max(dis), length.out = nrow(Boston))
+      
+      predictions <- predict(cs.fit, 
+                             newdata = data.frame(dis = dis_seq),
+                             se.fit = TRUE)
+      
+      predicted_nox <- predictions$fit
+      se <- predictions$se.fit
+      
+      plot(dis, nox, pch = 20, col = "blue",
+           main = bquote("DF = " ~ .(i)))
+      lines(dis_seq, predicted_nox, col = "red", lwd = 2)
+      lines(dis_seq, predicted_nox + 2 * se, col = "green", lty = 2)
+      lines(dis_seq, predicted_nox - 2 * se, col = "green", lty = 2)
+      
+      rss_vals[i-4] = sum(cs.fit$residuals^2)
+    }
+    ```
+
+    ```{r}
+    print(rss_vals)
+    best_df <- which.min(rss_vals) + 4
+    cat("The df with the smallest RSS is", best_df)
+    ```
+
+    ```{r}
+    # Plot RSS
+    degrees_of_freedom <- 5:13
+    plot(degrees_of_freedom, rss_vals, 
+         type = "b",
+         xlab = "DF", 
+         ylab = "RSS", 
+         main = "RSS vs Spline DF")
+    abline(v = 13, col = "red", lwd = 3, lty = 2)
+    ```
+
+    We tried degree of freedom 5-13 for the cubic splines and computed the RSS
+    for each. The DF that yielded the minimum RSS is 13 (the largest we tried),
+    which had an error of 1.782350. For cubic spline models with higher degrees
+    of freedom (more knots), the model generally has less RSS. However, they are
+    generally more wiggly than models with fewer degrees of freedom. This
+    illustrates the bias-variance tradeoff --- more complex & flexible models
+    (cubic splines with higher degrees of freedom) have lower bias (lower RSS)
+    but higher variance, and vice versa.
+
+(f) Perform cross-validation or another approach in order to select the best
+    degrees of freedom for a regression spline on this data. Describe your
     results.
+
+    ```{r warning=FALSE}
+    # Perform CV
+    set.seed(1)
+    cv.error <- numeric(9)
+    for (i in 5:13){
+      fit <- glm(nox ~ bs(dis, df = i))
+      cv.error[i-4] = cv.glm(Boston,fit, K = 10)$delta[1]
+    }
+
+    print(cv.error)
+    best_degree <- which.min(cv.error) + 4
+    cat("The df with the smallest cross-validation error is", best_degree)
+    ```
+
+    ```{r}
+    # Plot CV
+    degrees_of_freedom <- 5:13
+    plot(degrees_of_freedom, cv.error, 
+         type = "b",
+         xlab = "DF", 
+         ylab = "CV Error", 
+         main = "CV Error vs Spline DF")
+    abline(v = 8, col = "red", lwd = 3, lty = 2)
+    ```
+
+    We performed 10-fold cross validation and computed the validation error for
+    different degrees of freedom (5-13) for the cubic splines. The df that
+    yielded the minimum CV error is 8, which had an error of 0.003685305, and
+    this implies `df = 8` might be the optimal df for this question, but test
+    MSPE needs to be assessed to prove it. Also, a caveat is that the difference
+    in CV errors for these df's being examined is actually very small, and we
+    know that complex models might be harder to interpret. Therefore, in
+    reality, model with smaller df might be chosen.
