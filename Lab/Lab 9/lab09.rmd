@@ -3,8 +3,8 @@ title: "Lab 09 - SVMs"
 author: "Ken Ye"
 date: "`r Sys.Date()`"
 output:
-  html_document:
-    df_print: paged
+  pdf_document: 
+    latex_engine: xelatex
 ---
 
 # SVM Lab
@@ -415,7 +415,9 @@ whether a given car gets high or low gas mileage based on the Auto data set.
 
     ```{r}
     set.seed(1)
-    tune.out <- tune(svm, above_median ~ ., data = Auto, kernel = "linear",
+    tune.out <- tune(svm, above_median~., 
+                     data = Auto, 
+                     kernel = "linear",
                      ranges = list(cost = c(0.001, 0.01, 0.1,
                                             1, 5, 10, 100)))
     ```
@@ -439,7 +441,8 @@ whether a given car gets high or low gas mileage based on the Auto data set.
     ```{r}
     # radial
     set.seed(1)
-    tune.out <- tune(svm, above_median ~ ., data = Auto,
+    tune.out <- tune(svm, above_median~., 
+                     data = Auto,
                      kernel = "radial", 
                      ranges = list(cost = c(0.1, 1, 10, 100, 1000),
                                    gamma = c(0.5, 1, 2, 3, 4)))
@@ -457,7 +460,8 @@ whether a given car gets high or low gas mileage based on the Auto data set.
     ```{r}
     # polynomial
     set.seed(1)
-    tune.out <- tune(svm, above_median ~ ., data = Auto,
+    tune.out <- tune(svm, above_median~., 
+                     data = Auto,
                      kernel = "polynomial", 
                      ranges = list(cost = c(0.1, 1, 10, 100, 1000),
                                    degree = c(1, 2, 3),
@@ -483,7 +487,7 @@ whether a given car gets high or low gas mileage based on the Auto data set.
                          kernel = "linear",
                          cost = 1)
     summary(svmfit.linear)
-    plot(svmfit.linear, Auto,  horsepower ~ weight)
+    plot(svmfit.linear, Auto,  horsepower~weight)
     ```
 
     ```{r}
@@ -494,7 +498,7 @@ whether a given car gets high or low gas mileage based on the Auto data set.
                          cost = 10,
                          gamma = 0.5)
     summary(svmfit.radial)
-    plot(svmfit.radial, Auto,  horsepower ~ weight)
+    plot(svmfit.radial, Auto,  horsepower~weight)
     ```
 
     ```{r}
@@ -506,7 +510,7 @@ whether a given car gets high or low gas mileage based on the Auto data set.
                          gamma = 1,
                          d = 1)
     summary(svmfit.poly)
-    plot(svmfit.poly, Auto,  horsepower ~ weight)
+    plot(svmfit.poly, Auto,  horsepower~weight)
     ```
 
 Hint: In the lab, we used the plot() function for svm objects only in cases with
